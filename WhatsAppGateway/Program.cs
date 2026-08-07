@@ -1,3 +1,4 @@
+using WhatsAppGateway.Services;
 using WhatsAppGateway.Configuration;
 
 Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
@@ -25,12 +26,12 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHttpClient();
 
-// Dejamos temporalmente fuera:
-// builder.Services.AddScoped<IWhatsAppService, WhatsAppService>();
-// builder.Services.AddHttpClient();
-// builder.Services.Configure<WhatsAppOptions>(
-//     builder.Configuration.GetSection("WhatsApp"));
+builder.Services.AddScoped<IWhatsAppService, WhatsAppService>();
+
+builder.Services.Configure<WhatsAppOptions>(
+    builder.Configuration.GetSection("WhatsApp"));
 
 
 // ==========================================
@@ -49,7 +50,7 @@ app.UseSwaggerUI();
 
 
 // ==========================================
-// ENDPOINT DE PRUEBA
+// ENDPOINT PRUEBA
 // ==========================================
 
 app.MapGet("/", () =>
