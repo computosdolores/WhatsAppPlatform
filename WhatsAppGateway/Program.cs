@@ -1,5 +1,6 @@
 using WhatsAppGateway.Services;
 using WhatsAppGateway.Configuration;
+using WhatsAppGateway.Endpoints;
 
 Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
 
@@ -59,10 +60,17 @@ app.MapGet("/", () =>
     {
         estado = "OK",
         servicio = "WhatsAppGateway",
+        version = "2.0 WHATSAPP ENDPOINTS",
         fecha = DateTime.UtcNow
     };
 });
 
+// ==========================================
+// ENDPOINTS
+// ==========================================
+
+app.MapTestEndpoint();
+app.MapWhatsAppEndpoint();
 
 // ==========================================
 // EJECUTAR
