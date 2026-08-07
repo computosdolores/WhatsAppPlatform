@@ -1,11 +1,16 @@
-using WhatsAppGateway.Endpoints;
-using WhatsAppGateway.Services;
 using WhatsAppGateway.Configuration;
 
-var builder = WebApplication.CreateBuilder(args);
+Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    EnvironmentName = Environments.Production
+});
+
 
 // ==========================================
-// PUERTO
+// PUERTO RENDER
 // ==========================================
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
@@ -20,12 +25,12 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<IWhatsAppService, WhatsAppService>();
 
-builder.Services.AddHttpClient();
-
-builder.Services.Configure<WhatsAppOptions>(
-    builder.Configuration.GetSection("WhatsApp"));
+// Dejamos temporalmente fuera:
+// builder.Services.AddScoped<IWhatsAppService, WhatsAppService>();
+// builder.Services.AddHttpClient();
+// builder.Services.Configure<WhatsAppOptions>(
+//     builder.Configuration.GetSection("WhatsApp"));
 
 
 // ==========================================
@@ -39,26 +44,23 @@ var app = builder.Build();
 // SWAGGER
 // ==========================================
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI();
+
+
+// ==========================================
+// ENDPOINT DE PRUEBA
+// ==========================================
+
+app.MapGet("/", () =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-
-// ==========================================
-// ARCHIVOS ESTÁTICOS
-// ==========================================
-
-app.UseStaticFiles();
-
-
-// ==========================================
-// ENDPOINTS
-// ==========================================
-
-app.MapTestEndpoint();
-app.MapWhatsAppEndpoint();
+    return new
+    {
+        estado = "OK",
+        servicio = "WhatsAppGateway",
+        fecha = DateTime.UtcNow
+    };
+});
 
 
 // ==========================================
