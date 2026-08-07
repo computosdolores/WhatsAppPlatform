@@ -1,0 +1,20 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# .NET
+**/bin/
+**/obj/
+
+# Logs
+**/Logs/*
+!**/Logs/.gitkeep
+
+# Archivos temporales
+**/Temp/
+*.tmp
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
