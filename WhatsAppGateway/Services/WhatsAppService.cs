@@ -90,6 +90,56 @@ public class WhatsAppService : IWhatsAppService
             MetaResponse = respuestaMeta
         };
     }
+    public async Task<WhatsAppResponse> EnviarPlantillaAsync(EnviarPlantillaRequest request)
+    {
+        var url = $"{_options.BaseUrl}/{_options.ApiVersion}/{_options.PhoneNumberId}/messages";
+
+        Console.WriteLine($"URL META: {url}");
+
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.AccessToken);
+
+        var body = new
+        {
+            messaging_product = "whatsapp", to = request.Telefono, type = "template",
+            template = new
+            {
+                name = "feliz_cumpleanos",
+                language = new
+                {
+                    code = "es"
+                },
+                components = new[]
+                {
+                    new
+                    {
+                        type = "body",
+                        parameters = new[]
+                        {
+                            new
+                            {
+                                type = "text",
+                                text = request.Nombre
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        var json = JsonSerializer.Serialize(body);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(url, content);
+        var respuestaMeta = await response.Content.ReadAsStringAsync();
+
+        return new WhatsAppResponse
+        {
+            Exito = response.IsSuccessStatusCode,
+            Mensaje = response.IsSuccessStatusCode
+                ? "Plantilla enviada correctamente."
+                : "Error al enviar plantilla.",
+            MetaResponse = respuestaMeta
+        };
+    }
 
     /*
      {

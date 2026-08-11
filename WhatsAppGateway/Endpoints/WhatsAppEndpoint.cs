@@ -33,5 +33,21 @@ public static class WhatsAppEndpoint
             })
             .WithName("EnviarImagen")
             .WithOpenApi();
+
+        app.MapPost("/api/whatsapp/enviar-plantilla",
+            async (
+                EnviarPlantillaRequest request,
+                IWhatsAppService service) =>
+            {
+                var resultado =
+                    await service.EnviarPlantillaAsync(request);
+
+                if (resultado.Exito)
+                    return Results.Ok(resultado);
+
+                return Results.BadRequest(resultado);
+            })
+            .WithName("EnviarPlantilla")
+            .WithOpenApi();
     }
 }

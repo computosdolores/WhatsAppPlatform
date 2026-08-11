@@ -31,6 +31,12 @@ builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<IWhatsAppService, WhatsAppService>();
 
+var token = builder.Configuration["WhatsApp:AccessToken"];
+
+Console.WriteLine(
+    $"TOKEN CARGADO: {(string.IsNullOrEmpty(token) ? "NO" : "SI")}"
+);
+
 builder.Services.Configure<WhatsAppOptions>(
     builder.Configuration.GetSection("WhatsApp"));
 
