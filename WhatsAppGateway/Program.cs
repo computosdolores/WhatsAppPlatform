@@ -97,21 +97,15 @@ app.MapWhatsAppEndpoint();
 
 app.MapPost("/api/whatsapp/subir-imagen",
     async (
-        [FromForm] IFormFile archivo,
+        IFormFile archivo,
         IWebHostEnvironment environment,
         HttpContext httpContext) =>
     {
         Console.WriteLine("====================================");
-        Console.WriteLine("ENTRÓ AL ENDPOINT SUBIR IMAGEN");
-        Console.WriteLine($"Archivo null: {archivo == null}");
-
-        if (archivo != null)
-        {
-            Console.WriteLine($"Nombre: {archivo.FileName}");
-            Console.WriteLine($"Tamaño: {archivo.Length}");
-            Console.WriteLine($"ContentType: {archivo.ContentType}");
-        }
-
+        Console.WriteLine("SUBIR IMAGEN");
+        Console.WriteLine($"Archivo: {archivo?.FileName}");
+        Console.WriteLine($"Tamaño: {archivo?.Length}");
+        Console.WriteLine($"ContentType: {archivo?.ContentType}");
         Console.WriteLine("====================================");
 
         if (archivo == null || archivo.Length == 0)
@@ -124,7 +118,8 @@ app.MapPost("/api/whatsapp/subir-imagen",
         }
 
         if (string.IsNullOrWhiteSpace(archivo.ContentType) ||
-            !archivo.ContentType.StartsWith("image/",
+            !archivo.ContentType.StartsWith(
+                "image/",
                 StringComparison.OrdinalIgnoreCase))
         {
             return Results.BadRequest(new
@@ -158,10 +153,9 @@ app.MapPost("/api/whatsapp/subir-imagen",
                 carpetaImagenes,
                 nombreArchivo);
 
-        await using (var stream =
-            new FileStream(
-                rutaArchivo,
-                FileMode.Create))
+        await using (var stream = new FileStream(
+            rutaArchivo,
+            FileMode.Create))
         {
             await archivo.CopyToAsync(stream);
         }
@@ -171,15 +165,15 @@ app.MapPost("/api/whatsapp/subir-imagen",
             $"{httpContext.Request.Host}" +
             $"/imagenes/{nombreArchivo}";
 
-        Console.WriteLine($"IMAGEN GUARDADA: {rutaArchivo}");
-        Console.WriteLine($"URL: {url}");
-
         return Results.Ok(new
         {
             exito = true,
             url
         });
     })
+    .Accepts<IFormFile>("multipart/form-data")
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
     .WithName("SubirImagen")
     .WithOpenApi()
     .DisableAntiforgery();
