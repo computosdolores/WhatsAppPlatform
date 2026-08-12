@@ -65,7 +65,7 @@ public class WhatsAppService : IWhatsAppService
             type = "image",
             image = new
             {
-                link = _options.UrlImagenCumple,
+                link = request.UrlImagen,
                 caption = request.Caption
             }
         };

@@ -163,10 +163,7 @@ app.MapPost("/api/whatsapp/subir-imagen",
             await archivo.CopyToAsync(stream);
         }
 
-        string url =
-            $"{httpContext.Request.Scheme}://" +
-            $"{httpContext.Request.Host}" +
-            $"/imagenes/{nombreArchivo}";
+        string url = $"https://{httpContext.Request.Host}" + $"/imagenes/{nombreArchivo}";
 
         return Results.Ok(new
         {
