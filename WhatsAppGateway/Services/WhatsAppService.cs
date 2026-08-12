@@ -92,59 +92,100 @@ public class WhatsAppService : IWhatsAppService
     }
     public async Task<WhatsAppResponse> EnviarPlantillaAsync(EnviarPlantillaRequest request)
     {
-        var url = $"{_options.BaseUrl}/{_options.ApiVersion}/{_options.PhoneNumberId}/messages";
+        var url =
+            $"{_options.BaseUrl}/{_options.ApiVersion}/{_options.PhoneNumberId}/messages";
 
-        Console.WriteLine($"URL META: {url}");
-
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.AccessToken);
+        _httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(
+                "Bearer",
+                _options.AccessToken);
 
         var body = new
         {
-            messaging_product = "whatsapp", to = request.Telefono, type = "template",
+            messaging_product = "whatsapp",
+
+            to = request.Telefono,
+
+            type = "template",
+
             template = new
             {
                 name = "feliz_cumpleanos",
+
                 language = new
                 {
                     code = "es"
                 },
-                components = new[]
+
+                components = new object[]
                 {
-                    new
+                // ==========================================
+                // HEADER - IMAGEN
+                // ==========================================
+
+                new
+                {
+                    type = "header",
+
+                    parameters = new object[]
                     {
-                        type = "body",
-                        parameters = new[]
+                        new
                         {
-                            new
+                            type = "image",
+
+                            image = new
                             {
-                                type = "text",
-                                text = request.Nombre
+                                link = _options.UrlImagenCumple
                             }
                         }
                     }
+                },
+
+                // ==========================================
+                // BODY - NOMBRE
+                // ==========================================
+
+                new
+                {
+                    type = "body",
+
+                    parameters = new object[]
+                    {
+                        new
+                        {
+                            type = "text",
+
+                            text = request.Nombre
+                        }
+                    }
+                }
                 }
             }
         };
 
         var json = JsonSerializer.Serialize(body);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync(url, content);
-        var respuestaMeta = await response.Content.ReadAsStringAsync();
+
+        var content = new StringContent(
+            json,
+            Encoding.UTF8,
+            "application/json");
+
+        var response = await _httpClient.PostAsync(
+            url,
+            content);
+
+        var respuestaMeta =
+            await response.Content.ReadAsStringAsync();
 
         return new WhatsAppResponse
         {
             Exito = response.IsSuccessStatusCode,
+
             Mensaje = response.IsSuccessStatusCode
                 ? "Plantilla enviada correctamente."
                 : "Error al enviar plantilla.",
+
             MetaResponse = respuestaMeta
         };
     }
-
-    /*
-     {
-      "telefono": "59892003512",
-      "mensaje": "Hola Fernando 👋. Este mensaje fue enviado desde mi WhatsAppGateway usando la API oficial de WhatsApp Business."
-     }
-    */
 }

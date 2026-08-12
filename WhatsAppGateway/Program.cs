@@ -1,8 +1,11 @@
-using WhatsAppGateway.Services;
+using Microsoft.AspNetCore.Mvc;
 using WhatsAppGateway.Configuration;
 using WhatsAppGateway.Endpoints;
+using WhatsAppGateway.Services;
 
-Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
+Environment.SetEnvironmentVariable(
+    "DOTNET_USE_POLLING_FILE_WATCHER",
+    "1");
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -49,6 +52,13 @@ var app = builder.Build();
 
 
 // ==========================================
+// ARCHIVOS ESTÁTICOS
+// ==========================================
+
+app.UseStaticFiles();
+
+
+// ==========================================
 // SWAGGER
 // ==========================================
 
@@ -71,12 +81,91 @@ app.MapGet("/", () =>
     };
 });
 
+
 // ==========================================
 // ENDPOINTS
 // ==========================================
 
 app.MapTestEndpoint();
+
 app.MapWhatsAppEndpoint();
+
+
+// ==========================================
+// SUBIR IMAGEN
+// ==========================================
+
+app.MapPost("/api/whatsapp/subir-imagen",
+    async (
+        [FromForm] IFormFile archivo,
+        IWebHostEnvironment environment,
+        HttpContext httpContext) =>
+    {
+        if (archivo == null || archivo.Length == 0)
+        {
+            return Results.BadRequest(new
+            {
+                exito = false,
+                mensaje = "No se recibió ninguna imagen."
+            });
+        }
+
+        if (!archivo.ContentType.StartsWith("image/"))
+        {
+            return Results.BadRequest(new
+            {
+                exito = false,
+                mensaje = "El archivo recibido no es una imagen."
+            });
+        }
+
+        string carpetaImagenes = Path.Combine(
+            environment.WebRootPath
+                ?? Path.Combine(
+                    environment.ContentRootPath,
+                    "wwwroot"),
+            "imagenes");
+
+        Directory.CreateDirectory(carpetaImagenes);
+
+        string extension = Path.GetExtension(archivo.FileName);
+
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            extension = ".png";
+        }
+
+        string nombreArchivo =
+            $"{Guid.NewGuid():N}{extension}";
+
+        string rutaArchivo =
+            Path.Combine(
+                carpetaImagenes,
+                nombreArchivo);
+
+        await using (var stream =
+            new FileStream(
+                rutaArchivo,
+                FileMode.Create))
+        {
+            await archivo.CopyToAsync(stream);
+        }
+
+        string url =
+            $"{httpContext.Request.Scheme}://" +
+            $"{httpContext.Request.Host}" +
+            $"/imagenes/{nombreArchivo}";
+
+        return Results.Ok(new
+        {
+            exito = true,
+            url
+        });
+    })
+    .WithName("SubirImagen")
+    .WithOpenApi()
+    .DisableAntiforgery();
+
 
 // ==========================================
 // EJECUTAR
