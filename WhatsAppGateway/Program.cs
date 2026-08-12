@@ -101,6 +101,19 @@ app.MapPost("/api/whatsapp/subir-imagen",
         IWebHostEnvironment environment,
         HttpContext httpContext) =>
     {
+        Console.WriteLine("====================================");
+        Console.WriteLine("ENTRÓ AL ENDPOINT SUBIR IMAGEN");
+        Console.WriteLine($"Archivo null: {archivo == null}");
+
+        if (archivo != null)
+        {
+            Console.WriteLine($"Nombre: {archivo.FileName}");
+            Console.WriteLine($"Tamaño: {archivo.Length}");
+            Console.WriteLine($"ContentType: {archivo.ContentType}");
+        }
+
+        Console.WriteLine("====================================");
+
         if (archivo == null || archivo.Length == 0)
         {
             return Results.BadRequest(new
@@ -110,12 +123,14 @@ app.MapPost("/api/whatsapp/subir-imagen",
             });
         }
 
-        if (!archivo.ContentType.StartsWith("image/"))
+        if (string.IsNullOrWhiteSpace(archivo.ContentType) ||
+            !archivo.ContentType.StartsWith("image/",
+                StringComparison.OrdinalIgnoreCase))
         {
             return Results.BadRequest(new
             {
                 exito = false,
-                mensaje = "El archivo recibido no es una imagen."
+                mensaje = $"El archivo recibido no es una imagen. ContentType: {archivo.ContentType}"
             });
         }
 
@@ -155,6 +170,9 @@ app.MapPost("/api/whatsapp/subir-imagen",
             $"{httpContext.Request.Scheme}://" +
             $"{httpContext.Request.Host}" +
             $"/imagenes/{nombreArchivo}";
+
+        Console.WriteLine($"IMAGEN GUARDADA: {rutaArchivo}");
+        Console.WriteLine($"URL: {url}");
 
         return Results.Ok(new
         {
