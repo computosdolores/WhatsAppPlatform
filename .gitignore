@@ -15,6 +15,9 @@
 **/Temp/
 *.tmp
 
+# Imagenes subidas al Gateway
+WhatsAppGateway/wwwroot/imagenes/*
+
 # Archivos del sistema
 .DS_Store
 Thumbs.db
