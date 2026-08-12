@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using WhatsAppGateway.Configuration;
 using WhatsAppGateway.Endpoints;
 using WhatsAppGateway.Services;
+using WhatsAppGateway.Models;
 
 Environment.SetEnvironmentVariable(
     "DOTNET_USE_POLLING_FILE_WATCHER",
@@ -97,10 +98,12 @@ app.MapWhatsAppEndpoint();
 
 app.MapPost("/api/whatsapp/subir-imagen",
     async (
-        IFormFile archivo,
+        [FromForm] SubirImagenRequest request,
         IWebHostEnvironment environment,
         HttpContext httpContext) =>
     {
+        var archivo = request.Archivo;
+
         Console.WriteLine("====================================");
         Console.WriteLine("SUBIR IMAGEN");
         Console.WriteLine($"Archivo: {archivo?.FileName}");
@@ -171,7 +174,7 @@ app.MapPost("/api/whatsapp/subir-imagen",
             url
         });
     })
-    .Accepts<IFormFile>("multipart/form-data")
+    .Accepts<SubirImagenRequest>("multipart/form-data")
     .Produces(StatusCodes.Status200OK)
     .Produces(StatusCodes.Status400BadRequest)
     .WithName("SubirImagen")
