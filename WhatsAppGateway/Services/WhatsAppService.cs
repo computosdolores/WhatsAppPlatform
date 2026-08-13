@@ -135,7 +135,7 @@ public class WhatsAppService : IWhatsAppService
 
                             image = new
                             {
-                                link = _options.UrlImagenCumple
+                                link = request.UrlImagen
                             }
                         }
                     }
