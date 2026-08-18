@@ -60,6 +60,8 @@ public class WhatsAppService : IWhatsAppService
 
         var body = new
         {
+
+
             messaging_product = "whatsapp",
             to = request.Telefono,
             type = "image",

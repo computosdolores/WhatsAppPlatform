@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using WhatsAppGateway.Configuration;
 using WhatsAppGateway.Endpoints;
 using WhatsAppGateway.Services;
@@ -46,14 +46,14 @@ builder.Services.Configure<WhatsAppOptions>(
 
 
 // ==========================================
-// APLICACI�N
+// APLICACIÓN
 // ==========================================
 
 var app = builder.Build();
 
 
 // ==========================================
-// ARCHIVOS EST�TICOS
+// ARCHIVOS ESTÁTICOS
 // ==========================================
 
 app.UseStaticFiles();
@@ -107,7 +107,7 @@ app.MapPost("/api/whatsapp/subir-imagen",
         Console.WriteLine("====================================");
         Console.WriteLine("SUBIR IMAGEN");
         Console.WriteLine($"Archivo: {archivo?.FileName}");
-        Console.WriteLine($"Tama�o: {archivo?.Length}");
+        Console.WriteLine($"Tamaño: {archivo?.Length}");
         Console.WriteLine($"ContentType: {archivo?.ContentType}");
         Console.WriteLine("====================================");
 
@@ -116,7 +116,7 @@ app.MapPost("/api/whatsapp/subir-imagen",
             return Results.BadRequest(new
             {
                 exito = false,
-                mensaje = "No se recibi� ninguna imagen."
+                mensaje = "No se recibió ninguna imagen."
             });
         }
 
@@ -178,6 +178,71 @@ app.MapPost("/api/whatsapp/subir-imagen",
     .WithOpenApi()
     .DisableAntiforgery();
 
+
+// ==========================================
+// WEBHOOK WHATSAPP - VERIFICACIÓN META
+// ==========================================
+
+app.MapGet("/api/whatsapp/webhook",
+    (
+        HttpContext context,
+        IConfiguration configuration) =>
+    {
+        string mode =
+            context.Request.Query["hub.mode"].ToString();
+
+        string token =
+            context.Request.Query["hub.verify_token"].ToString();
+
+        string challenge =
+            context.Request.Query["hub.challenge"].ToString();
+
+        string tokenConfigurado =
+            configuration["WhatsApp:WebhookVerifyToken"] ?? "";
+
+        Console.WriteLine("====================================");
+        Console.WriteLine("VERIFICACIÓN WEBHOOK WHATSAPP");
+        Console.WriteLine($"Mode: {mode}");
+        Console.WriteLine($"Token recibido: {!string.IsNullOrEmpty(token)}");
+        Console.WriteLine($"Token configurado: {!string.IsNullOrEmpty(tokenConfigurado)}");
+        Console.WriteLine("====================================");
+
+        if (mode == "subscribe" &&
+            token == tokenConfigurado)
+        {
+            Console.WriteLine("✔ WEBHOOK VERIFICADO");
+
+            return Results.Text(
+                challenge,
+                "text/plain");
+        }
+
+        Console.WriteLine("❌ ERROR DE VERIFICACIÓN");
+
+        return Results.Unauthorized();
+    });
+
+
+// ==========================================
+// WEBHOOK WHATSAPP - NOTIFICACIONES
+// ==========================================
+
+app.MapPost("/api/whatsapp/webhook",
+    async (HttpRequest request) =>
+    {
+        using var reader =
+            new StreamReader(request.Body);
+
+        string body =
+            await reader.ReadToEndAsync();
+
+        Console.WriteLine("====================================");
+        Console.WriteLine("WEBHOOK WHATSAPP RECIBIDO");
+        Console.WriteLine(body);
+        Console.WriteLine("====================================");
+
+        return Results.Ok();
+    });
 
 // ==========================================
 // EJECUTAR

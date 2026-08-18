@@ -7,4 +7,5 @@ public class WhatsAppOptions
     public string ApiVersion { get; set; } = "v24.0";
     public string BaseUrl { get; set; } = "https://graph.facebook.com";
     public string UrlImagenCumple { get; set; } = string.Empty;
+    public string WebhookVerifyToken { get; set; } = "";
 }
