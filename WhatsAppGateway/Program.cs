@@ -245,6 +245,83 @@ app.MapPost("/api/whatsapp/webhook",
     });
 
 // ==========================================
+// DIAGNÓSTICO META WHATSAPP
+// ==========================================
+
+app.MapGet("/api/whatsapp/diagnostico",
+    async (
+        IConfiguration configuration,
+        IHttpClientFactory httpClientFactory) =>
+    {
+        string? accessToken =
+            configuration["WhatsApp:AccessToken"];
+
+        string? phoneNumberId =
+            configuration["WhatsApp:PhoneNumberId"];
+
+        string apiVersion =
+            configuration["WhatsApp:ApiVersion"] ?? "v25.0";
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return Results.Problem(
+                "El AccessToken no está configurado.");
+        }
+
+        if (string.IsNullOrWhiteSpace(phoneNumberId))
+        {
+            return Results.Problem(
+                "El PhoneNumberId no está configurado.");
+        }
+
+        try
+        {
+            var client =
+                httpClientFactory.CreateClient();
+
+            string url =
+                $"https://graph.facebook.com/{apiVersion}/{phoneNumberId}" +
+                "?fields=id,display_phone_number,verified_name";
+
+            using var request =
+                new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url);
+
+            request.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue(
+                    "Bearer",
+                    accessToken);
+
+            using var response =
+                await client.SendAsync(request);
+
+            string contenido =
+                await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine("====================================");
+            Console.WriteLine("DIAGNÓSTICO META WHATSAPP");
+            Console.WriteLine($"PhoneNumberId: {phoneNumberId}");
+            Console.WriteLine($"HTTP: {(int)response.StatusCode}");
+            Console.WriteLine($"Respuesta: {contenido}");
+            Console.WriteLine("====================================");
+
+            return Results.Content(
+                contenido,
+                "application/json",
+                statusCode: (int)response.StatusCode);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"ERROR DIAGNÓSTICO META: {ex.Message}");
+
+            return Results.Problem(
+                "Error al comunicarse con Meta.");
+        }
+    });
+
+// ==========================================
 // EJECUTAR
 // ==========================================
 
