@@ -266,7 +266,7 @@ app.MapGet("/api/whatsapp/diagnostico-plantillas",
             configuration["WhatsApp:ApiVersion"] ?? "v25.0";
 
         string wabaId =
-            "28832214123047761";
+            "4004577189847173";
 
         try
         {
