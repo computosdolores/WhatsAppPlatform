@@ -116,7 +116,7 @@ public class WhatsAppService : IWhatsAppService
 
                 language = new
                 {
-                    code = "es_ES"
+                    code = "es_MX"
                 },
 
                 components = new object[]
