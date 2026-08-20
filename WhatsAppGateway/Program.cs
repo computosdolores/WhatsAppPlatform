@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using WhatsAppGateway.Configuration;
 using WhatsAppGateway.Endpoints;
-using WhatsAppGateway.Services;
 using WhatsAppGateway.Models;
+using WhatsAppGateway.Services;
 
 Environment.SetEnvironmentVariable(
     "DOTNET_USE_POLLING_FILE_WATCHER",
@@ -248,7 +250,11 @@ app.MapPost("/api/whatsapp/webhook",
 // DIAGNÓSTICO META WHATSAPP
 // ==========================================
 
-app.MapGet("/api/whatsapp/diagnostico",
+// ==========================================
+// DIAGNÓSTICO META - WABA Y PLANTILLAS
+// ==========================================
+
+app.MapGet("/api/whatsapp/diagnostico-plantillas",
     async (
         IConfiguration configuration,
         IHttpClientFactory httpClientFactory) =>
@@ -265,13 +271,13 @@ app.MapGet("/api/whatsapp/diagnostico",
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return Results.Problem(
-                "El AccessToken no está configurado.");
+                "AccessToken no configurado.");
         }
 
         if (string.IsNullOrWhiteSpace(phoneNumberId))
         {
             return Results.Problem(
-                "El PhoneNumberId no está configurado.");
+                "PhoneNumberId no configurado.");
         }
 
         try
@@ -279,45 +285,99 @@ app.MapGet("/api/whatsapp/diagnostico",
             var client =
                 httpClientFactory.CreateClient();
 
-            string url =
-                $"https://graph.facebook.com/{apiVersion}/{phoneNumberId}" +
-                "?fields=id,display_phone_number,verified_name";
+            // ------------------------------------------
+            // 1. OBTENER INFORMACIÓN DEL NÚMERO
+            // ------------------------------------------
 
-            using var request =
+            string urlNumero =
+                $"https://graph.facebook.com/{apiVersion}/{phoneNumberId}" +
+                "?fields=id,display_phone_number,verified_name,waba_id";
+
+            using var requestNumero =
                 new HttpRequestMessage(
                     HttpMethod.Get,
-                    url);
+                    urlNumero);
 
-            request.Headers.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue(
+            requestNumero.Headers.Authorization =
+                new AuthenticationHeaderValue(
                     "Bearer",
                     accessToken);
 
-            using var response =
-                await client.SendAsync(request);
+            using var responseNumero =
+                await client.SendAsync(requestNumero);
 
-            string contenido =
-                await response.Content.ReadAsStringAsync();
+            string numeroJson =
+                await responseNumero.Content.ReadAsStringAsync();
 
-            Console.WriteLine("====================================");
-            Console.WriteLine("DIAGNÓSTICO META WHATSAPP");
-            Console.WriteLine($"PhoneNumberId: {phoneNumberId}");
-            Console.WriteLine($"HTTP: {(int)response.StatusCode}");
-            Console.WriteLine($"Respuesta: {contenido}");
-            Console.WriteLine("====================================");
+            if (!responseNumero.IsSuccessStatusCode)
+            {
+                return Results.Content(
+                    numeroJson,
+                    "application/json",
+                    statusCode: (int)responseNumero.StatusCode);
+            }
 
-            return Results.Content(
-                contenido,
-                "application/json",
-                statusCode: (int)response.StatusCode);
+            using var numeroDoc =
+                JsonDocument.Parse(numeroJson);
+
+            if (!numeroDoc.RootElement.TryGetProperty(
+                    "waba_id",
+                    out var wabaElement))
+            {
+                return Results.Ok(new
+                {
+                    numero = numeroJson,
+                    mensaje =
+                        "Meta no devolvió waba_id en esta consulta."
+                });
+            }
+
+            string wabaId =
+                wabaElement.GetString() ?? "";
+
+            // ------------------------------------------
+            // 2. OBTENER PLANTILLAS
+            // ------------------------------------------
+
+            string urlPlantillas =
+                $"https://graph.facebook.com/{apiVersion}/{wabaId}/message_templates";
+
+            using var requestPlantillas =
+                new HttpRequestMessage(
+                    HttpMethod.Get,
+                    urlPlantillas);
+
+            requestPlantillas.Headers.Authorization =
+                new AuthenticationHeaderValue(
+                    "Bearer",
+                    accessToken);
+
+            using var responsePlantillas =
+                await client.SendAsync(requestPlantillas);
+
+            string plantillasJson =
+                await responsePlantillas.Content.ReadAsStringAsync();
+
+            return Results.Ok(new
+            {
+                phone_number_id = phoneNumberId,
+
+                waba_id = wabaId,
+
+                numero = JsonDocument.Parse(
+                    numeroJson).RootElement,
+
+                plantillas = JsonDocument.Parse(
+                    plantillasJson).RootElement
+            });
         }
         catch (Exception ex)
         {
             Console.WriteLine(
-                $"ERROR DIAGNÓSTICO META: {ex.Message}");
+                $"ERROR DIAGNOSTICO PLANTILLAS: {ex}");
 
             return Results.Problem(
-                "Error al comunicarse con Meta.");
+                "Error consultando Meta.");
         }
     });
 
