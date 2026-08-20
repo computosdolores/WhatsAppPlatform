@@ -262,122 +262,46 @@ app.MapGet("/api/whatsapp/diagnostico-plantillas",
         string? accessToken =
             configuration["WhatsApp:AccessToken"];
 
-        string? phoneNumberId =
-            configuration["WhatsApp:PhoneNumberId"];
-
         string apiVersion =
             configuration["WhatsApp:ApiVersion"] ?? "v25.0";
 
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Results.Problem(
-                "AccessToken no configurado.");
-        }
-
-        if (string.IsNullOrWhiteSpace(phoneNumberId))
-        {
-            return Results.Problem(
-                "PhoneNumberId no configurado.");
-        }
+        string wabaId =
+            "28832214123047761";
 
         try
         {
             var client =
                 httpClientFactory.CreateClient();
 
-            // ------------------------------------------
-            // 1. OBTENER INFORMACIÓN DEL NÚMERO
-            // ------------------------------------------
-
-            string urlNumero =
-                $"https://graph.facebook.com/{apiVersion}/{phoneNumberId}" +
-                "?fields=id,display_phone_number,verified_name,waba_id";
-
-            using var requestNumero =
-                new HttpRequestMessage(
-                    HttpMethod.Get,
-                    urlNumero);
-
-            requestNumero.Headers.Authorization =
-                new AuthenticationHeaderValue(
-                    "Bearer",
-                    accessToken);
-
-            using var responseNumero =
-                await client.SendAsync(requestNumero);
-
-            string numeroJson =
-                await responseNumero.Content.ReadAsStringAsync();
-
-            if (!responseNumero.IsSuccessStatusCode)
-            {
-                return Results.Content(
-                    numeroJson,
-                    "application/json",
-                    statusCode: (int)responseNumero.StatusCode);
-            }
-
-            using var numeroDoc =
-                JsonDocument.Parse(numeroJson);
-
-            if (!numeroDoc.RootElement.TryGetProperty(
-                    "waba_id",
-                    out var wabaElement))
-            {
-                return Results.Ok(new
-                {
-                    numero = numeroJson,
-                    mensaje =
-                        "Meta no devolvió waba_id en esta consulta."
-                });
-            }
-
-            string wabaId =
-                wabaElement.GetString() ?? "";
-
-            // ------------------------------------------
-            // 2. OBTENER PLANTILLAS
-            // ------------------------------------------
-
-            string urlPlantillas =
+            string url =
                 $"https://graph.facebook.com/{apiVersion}/{wabaId}/message_templates";
 
-            using var requestPlantillas =
+            using var request =
                 new HttpRequestMessage(
                     HttpMethod.Get,
-                    urlPlantillas);
+                    url);
 
-            requestPlantillas.Headers.Authorization =
+            request.Headers.Authorization =
                 new AuthenticationHeaderValue(
                     "Bearer",
                     accessToken);
 
-            using var responsePlantillas =
-                await client.SendAsync(requestPlantillas);
+            using var response =
+                await client.SendAsync(request);
 
-            string plantillasJson =
-                await responsePlantillas.Content.ReadAsStringAsync();
+            string contenido =
+                await response.Content.ReadAsStringAsync();
 
-            return Results.Ok(new
-            {
-                phone_number_id = phoneNumberId,
-
-                waba_id = wabaId,
-
-                numero = JsonDocument.Parse(
-                    numeroJson).RootElement,
-
-                plantillas = JsonDocument.Parse(
-                    plantillasJson).RootElement
-            });
+            return Results.Content(
+                contenido,
+                "application/json",
+                statusCode: (int)response.StatusCode);
         }
         catch (Exception ex)
         {
-            Console.WriteLine(
-                $"ERROR DIAGNOSTICO PLANTILLAS: {ex}");
-
             return Results.Problem(
-                "Error consultando Meta.");
+                "Error consultando las plantillas: " +
+                ex.Message);
         }
     });
 
